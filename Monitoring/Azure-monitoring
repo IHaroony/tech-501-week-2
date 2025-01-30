@@ -1,0 +1,98 @@
+This document outlines the process of setting up monitoring for a Virtual Machine (VM) in Azure, configuring dashboards to track critical metrics, and testing load on the system. It covers the essential steps to monitor CPU usage, disk operations, and web app performance using tools like **Apache Benchmark** for generating traffic.
+
+We also explore the importance of **auto scaling** to efficiently manage fluctuating load on the application. Two primary types of scaling are discussed: **Vertical Scaling** (Scaling Up/Down) and **Horizontal Scaling** (Scaling Out/In). This document explains when to use each type of scaling, their benefits, and limitations, providing a comprehensive guide for optimizing resource usage and ensuring high availability of your application.
+
+### Monitoring page ###
+We navigated to the **Monitoring** page of our VM/
+
+![[Pasted image 20250130134115.png]]
+
+### Making the Dashboard###
+
+elected the metrics we wanted to monitor. The selected graphs include:
+
+- **CPU Usage**
+- **Average Disk Operations**
+- **Network**
+
+We clicked on the "Pin" button to add these graphs to a dashboard. We renamed the dashboard to **tech-501-shared** and selected the shared options.
+
+![[Pasted image 20250130134656.png]]
+
+
+
+- Afterward, we accessed the **Resource Group** and searched for **Dashboard**. We opened our dashboard **tech501-haroon-shared-app-dashboard** and confirmed that the pinned graphs were displayed.
+
+### Filtering###
+
+- To ensure that the graphs update in real-time, we adjusted the filtering options. For example, for the CPU graph, we selected the last **30 minutes** and saved the changes to the dashboard.
+
+
+### Interacting with the Web App for Load Testing/Installing Apache
+- While connected to our VM, we ran the following command to install Apache utilities:
+
+    
+    `sudo apt-get install apache2-utils`
+    
+- After installing Apache, we ran the **ab (Apache Benchmark)** tool to simulate traffic to the web app:
+    
+
+    
+    `ab -n 1000 -c 100 http://172.187.129.218/`
+    
+- This generated traffic to spike the CPU usage, allowing us to observe how the system handles load. We noted that the CPU usage reached **6.3%** during this test, and we decided to set up an alert for **6%** to be notified when this threshold is reached.
+
+
+
+## **Why Use Auto Scaling?**
+
+Auto scaling is a powerful solution to ensure that the application can handle high loads efficiently. Here's why it's useful:
+
+- **App VM - CPU Load Too High:** Auto-scaling can help by automatically adding more resources or instances when the load is high.
+- **Dashboard Monitoring:** Monitoring graphs help us visualize the load, and when necessary, alerts notify us when critical thresholds are met.
+- **Auto Scaling:** The ultimate solution to handle increased load and ensure high availability.
+
+
+
+
+# **Types of Scaling** #
+
+## **Vertical Scaling (Scaling Up/Down)**
+
+
+- Increases or decreases the power of a **single** VM (CPU, RAM, Disk).
+- Example: Upgrading a **Standard_B2s (2vCPU, 4GB RAM)** VM to a **Standard_D4s (4vCPU, 16GB RAM)**.
+- Good for **monolithic applications** that can’t easily distribute workloads.
+- **Limits**: There’s always a maximum size you can scale to.
+
+### **🔹 When to Use Vertical Scaling?**
+
+✅ Your app runs on a **single VM** and can’t be split across multiple instances.  
+✅ You need more **CPU, RAM, or disk** but don’t need extra VMs.  
+✅ **Database scaling** (e.g., upgrading an SQL Server to a higher SKU).
+
+### **🔹 Downsides?**
+
+❌ **Downtime required** (VM restarts when resized).  
+❌ **Limited scalability** (every VM has a max size).  
+❌ **Expensive** when reaching high-tier VM sizes.
+
+---
+
+## **🔹 Horizontal Scaling (Scaling Out/In)**
+
+- Adds or removes **multiple** VMs to handle load.
+- Example: A VM Scale Set (VMSS) starts with 2 VMs but **auto-scales** to 10 when CPU usage hits 70%.
+- Good for **stateless applications** (e.g., web apps, APIs, microservices).
+- Works with **Azure Load Balancer** to distribute traffic.
+
+### **🔹 When to Use Horizontal Scaling?**
+
+✅ Your app needs to handle **more users or traffic** dynamically.  
+✅ You want **high availability** (if one VM fails, others still work).  
+✅ You need to **reduce costs** by running only the required number of VMs.
+
+### **🔹 Downsides?**
+
+❌ **More complex** (requires load balancing, proper session management).  
+❌ **Not ideal for stateful apps** (databases don’t scale well this way).

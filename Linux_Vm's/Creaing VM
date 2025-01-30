@@ -1,0 +1,224 @@
+
+
+## **Dependencies**
+
+- **Name**: `tech501-Haroon-sparta-app-db-vm`
+- **OS**: Ubuntu 22.04 LTS image
+- **VM Size**: Standard
+- **Network Security Group**: Allow SSH
+- **Public IP**: Yes
+- **VNet**: Use the pre-created 2-subnet VNet
+- **Subnet**: Use the private subnet for the database
+- Azure allows communication between devices on the same VNet by default (no port access required)
+
+
+---
+
+## **Accessing the VM**
+
+### SSH into the VM
+
+
+
+`ssh -i ~/.ssh/tech501-haroon-az-key adminuser@<Public_IP>`
+
+### Run updates
+
+
+
+`sudo apt update -y && sudo apt upgrade -y`
+
+---
+
+## **Installing MongoDB**
+
+### Install MongoDB (Version 7.0.6)
+
+1. Install dependencies:
+    
+
+    
+    `sudo apt-get install gnupg curl -y`
+    
+2. Download GPG key:
+    
+
+    
+    `curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | \ sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor`
+    
+3. Create the MongoDB source list:
+    
+    t
+    
+    `echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list`
+    
+4. Update repositories:
+    
+    
+    
+    `sudo apt-get update`
+    
+5. Install MongoDB:
+    
+    
+    
+    `sudo apt-get install -y mongodb-org=7.0.6 mongodb-org-database=7.0.6 mongodb-org-server=7.0.6 mongodb-mongosh mongodb-org-mongos=7.0.6 mongodb-org-tools=7.0.6`
+    
+6. (Optional) Prevent automatic upgrades:
+    
+ 
+    
+    `echo "mongodb-org hold" | sudo dpkg --set-selections echo "mongodb-org-database hold" | sudo dpkg --set-selections echo "mongodb-org-server hold" | sudo dpkg --set-selections echo "mongodb-mongosh hold" | sudo dpkg --set-selections echo "mongodb-org-mongos hold" | sudo dpkg --set-selections echo "mongodb-org-tools hold" | sudo dpkg --set-selections`
+    
+
+### Start MongoDB
+
+1. Check status:
+
+    
+    `sudo systemctl status mongod`
+    
+2. Start MongoDB:
+    
+
+    
+    `sudo systemctl start mongod`
+    
+
+---
+
+## **Configuring MongoDB**
+
+### Change BindIP
+
+1. Open the MongoDB configuration file:
+    
+
+    
+    `sudo nano /etc/mongod.conf`
+    
+2. Change the `bindIP` value to `0.0.0.0` to allow connections from any IP (not recommended for production).
+    
+3. Restart MongoDB:
+    
+
+    
+    `sudo systemctl restart mongod`
+    
+
+---
+
+## **Connecting App VM to Database VM**
+
+### Environment Variables
+
+1. Switch to the app folder:
+    
+ 
+    
+    `cd /repo/app`
+    
+2. Set the `DB_HOST` environment variable:
+    
+
+    
+    `export DB_HOST=mongodb://<DB_Private_IP>:27017/posts`
+    
+3. Verify:
+    
+    
+    `printenv DB_HOST`
+    
+4. Seed the database:
+    
+  
+    
+    `npm install`
+    
+
+---
+
+## **Reverse Proxy Setup (App VM)**
+
+1. Edit the Nginx configuration file:
+    
+    
+
+    `sudo nano /etc/nginx/sites-available/default`
+    
+2. Add the following to the `location` section:
+    
+    nginx
+    
+    
+    
+    `proxy_pass http://localhost:3000;`
+    
+3. Remove `try_files` if present.
+    
+4. Restart Nginx:
+    
+
+    
+    `sudo systemctl restart nginx`
+    
+5. Access the app using the App VM's public IP without `:3000`.
+    
+
+---
+
+## **Running the App in the Background**
+
+### Using PM2
+
+1. Install PM2 globally:
+    
+    
+    
+    `sudo npm install -g pm2`
+    
+2. Start the app:
+    
+
+    `pm2 start app.js --name "my-app"`
+    
+3. Check the status:
+    
+
+    
+    `pm2 status`
+    
+4. Manage the app:
+    
+    - Stop: `pm2 stop "my-app"`
+    - Restart: `pm2 restart "my-app"`
+    - View logs: `pm2 logs "my-app"`
+
+---
+
+## **Creating an Image from the DB VM**
+
+1. Prepare the VM for imaging:
+    
+  
+    
+    `sudo waagent -deprovision+user`
+    
+2. Stop the VM from the Azure portal.
+    
+3. Capture the image with the name:
+    
+    - `tech501-Haroon-sparta-db-ready-to-run-img`
+4. Deploy a VM from the image and verify MongoDB is running:
+    
+    
+    
+    `sudo systemctl status mongod`
+    
+
+---
+
+## **Blocker Issues**
+
+1. **Trusted Launch VMs**:
+    - VMs created with the `Trusted Launch` option require images to be shared to a gallery needed to Use `Standard` security for simpler image creation and this willl be used for future machines 

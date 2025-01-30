@@ -1,0 +1,57 @@
+## SSH Into Instances and Load Balancer
+
+### 1. **Overview**
+
+This document provides the necessary steps to SSH into your load balancer instance and other instances running.
+### 2. **Prerequisites**
+
+- Ensure your private key (e.g., `tech501-haroon-az-key`) is available and has the correct permissions.
+- You should know the IP addresses or DNS names of your load balancer and target instances.
+- Ensure that the security groups or firewall rules are configured to allow SSH traffic (port 22).
+
+### 3. **SSH Into Load Balancer**
+
+Your load balancer should be running on a public IP address or be accessible through a bastion host.
+
+- **Command to SSH into Load Balancer**:
+    
+    
+    `ssh -i /path/to/tech501-haroon-az-key azureuser@<load-balancer-public-ip>`
+    
+    Replace `<load-balancer-public-ip>` with the actual public IP of the load balancer.
+    
+- **Important**:
+    
+    - If the load balancer uses specific ports like 5000, make sure the security group allows access to this port.
+    - Load balancers typically don’t serve as SSH access points, but ensure you have a connection method, such as SSH tunneling or connecting to backend instances.
+
+### 4. **SSH Into Frontend Instances**
+
+Your frontend instances may be running on specific ports like 5000, 5001, or 5002. To SSH into these, follow the steps below.
+
+#### 4.1 **SSH into Frontend Instance on Port 5000**:
+
+- If the instance is directly accessible via SSH, use the following command:
+    
+
+    `ssh -i /path/to/tech501-haroon-az-key azureuser@<frontend-instance-ip>`
+    
+    Replace `<frontend-instance-ip>` with the actual IP of the frontend instance.
+    
+
+### 5. **SSH Command Breakdown (Example)*
+
+Here’s a detailed explanation of a typical SSH command to connect to instances:
+
+#### Example Command:
+
+
+
+`ssh -i ~/.ssh/tech501-haroon-az-key -p 50000 adminuser@172.187.118.34`
+
+#### Explanation:
+
+- **`ssh`**: Initiates the SSH protocol.
+- **`-i ~/.ssh/tech501-haroon-az-key`**: Specifies the private key used for authentication. The private key is stored at `~/.ssh/tech501-haroon-az-key`.
+- **`-p 50000`**: Indicates the custom port number `50000` for SSH access (default is 22). This means the SSH server on the remote instance is listening on port `50000` instead of the default port `22`.
+- **`adminuser@172.187.118.34`**: The username (`adminuser`) and the IP address of the remote server (`172.187.118.34`). The server can be accessed using this username at this IP address.
