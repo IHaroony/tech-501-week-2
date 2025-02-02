@@ -1,0 +1,125 @@
+
+# **Planning the 3 subnet architecture** #
+
+This document details a 3-subnet architecture designed to secure a database within a Virtual Network (VNET). By segmenting the network into distinct subnets with specific roles, we enhance security, control traffic flow, and prevent direct exposure of critical resources to the public internet.
+
+The architecture consists of three primary subnets:
+
+1. **Public Subnet**: Hosts the application virtual machine (APP VM) and manages public-facing traffic.
+    
+2. **DMZ (Demilitarized Zone) Subnet**: Serves as an intermediary firewall that filters and routes traffic between the public and private subnets.
+    
+3. **Private Subnet**: Houses the database virtual machine (DB VM) with strict security policies.
+
+
+
+![Architecture Diagram](Important-Drawing-of-3-subnet.png)
+
+## Subnet Breakdown
+
+### 1. **Public Subnet (10.0.2.0/24)**
+
+- **Purpose**: Handles inbound HTTP and SSH traffic while hosting the web application.
+    
+- **Components**:
+    
+    - **Network Security Group (NSG)**: Defines security rules for controlling inbound and outbound traffic.
+        
+    - **Network Interface Card (NIC)**: Connects the application VM to the network.
+        
+    - **Application Virtual Machine (APP VM)**: Hosts the web application and serves user requests.
+        
+- **Security Rules**:
+    
+    - Allow **inbound HTTP traffic (port 80)** for web access.
+        
+    - Allow **inbound SSH traffic (port 22)** for secure remote administration.
+        
+    - Block all other inbound connections by default.
+        
+
+### 2. **DMZ Subnet (10.0.3.0/24)**
+
+- **Purpose**: Acts as a security buffer that filters traffic before reaching the private subnet.
+    
+- **Components**:
+    
+    - **Network Security Group (NSG)**: Implements firewall rules to filter incoming and outgoing traffic.
+        
+    - **Network Interface Card (NIC)**: Connects the Network Virtual Appliance (NVA) VM to the subnet.
+        
+    - **Network Virtual Appliance (NVA VM)**: Functions as a firewall/router, filtering and forwarding traffic.
+        
+- **Security Rules**:
+    
+    - Allow **SSH traffic** for remote management.
+        
+    - **IP forwarding enabled** to route filtered traffic to the private subnet.
+        
+    - Use **iptables rules** to enforce additional traffic filtering.
+        
+    - Block all unauthorized external traffic.
+        
+
+### 3. **Private Subnet (10.0.4.0/24)**
+
+- **Purpose**: Protects the database by limiting access to only essential services.
+    
+- **Components**:
+    
+    - **Network Security Group (NSG)**: Implements strict access control rules.
+        
+    - **Network Interface Card (NIC)**: Connects the database VM to the private subnet.
+        
+    - **Database Virtual Machine (DB VM)**: Stores and processes sensitive data.
+        
+- **Security Rules**:
+    
+    - Allow **SSH traffic** only from the DMZ subnet.
+        
+    - Allow **MongoDB traffic (default port 27017)** from the application VM only.
+        
+    - Deny all other inbound connections by default.
+        
+
+## Traffic Flow
+
+- **Public Traffic Flow**:
+    
+    - Web users send HTTP requests to the Public IP of the APP VM.
+        
+    - SSH traffic for management also goes through the Public IP.
+        
+    - Only authorized requests are processed; all other traffic is blocked.
+        
+- **Internal Traffic Filtering**:
+    
+    - The DMZ subnet intercepts traffic before it reaches the private subnet.
+        
+    - The NVA VM enforces security rules, filtering out unauthorized traffic.
+        
+    - Allowed traffic is forwarded securely to the private subnet.
+        
+- **Database Protection**:
+    
+    - Only essential services (SSH and MongoDB) are permitted to communicate with the database.
+        
+    - The NSG enforces strict rules to prevent unauthorized access.
+        
+    - Direct public access to the database is completely blocked.
+        
+
+## Benefits of this Architecture
+
+- **Enhanced Security**: Prevents direct exposure of the database to the internet.
+    
+- **Traffic Filtering**: The DMZ subnet ensures only valid traffic reaches the private subnet.
+    
+- **Access Control**: NSGs restrict traffic at every level, reducing the attack surface.
+    
+- **Scalability**: The architecture can be expanded by adding additional security layers or services.
+    
+
+## Conclusion
+
+This 3-subnet architecture provides a layered security approach to protect the database. The public subnet handles external requests, the DMZ subnet filters traffic, and the private subnet secures sensitive data. Implementing this design ensures better security and minimizes risks from unauthorized access and cyber threats.
